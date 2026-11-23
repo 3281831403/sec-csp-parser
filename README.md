@@ -1,6 +1,6 @@
 # sec-csp-parser
 
-上线 CSP 之后仍被注入脚本，排查发现策略解析出来的白名单比实际宽得多：host 匹配用后缀比较，`evil-example.com` 能命中 `example.com`；`*.example.com` 把 `example.com` 本身也放行；`*` 后面的 path 限制被丢掉，任意路径都能加载；没写端口被当成任意端口；`/js` 前缀把 `/js-evil/x.js` 也放进来；nonce 不匹配时仍回落到主机白名单；hash 用前缀比较，前缀相同即通过；缺少 `default-src` 时返回 `*` 默认放行；重复指令取最后一条，后注入的宽策略覆盖前一条；token 里的 `;` 等非法字符不校验，注入内容直接混进 source list。csp/policy.py 是核心，tests/test_policy.py 15个红。要修的是：按 CSP 语义收紧 source list 解析与 URL 匹配，把上述 10 个缺陷全部修掉。
+上线 CSP 之后仍被注入脚本，排查发现策略解析出来的白名单比实际宽得多：host 匹配用后缀比较，evil-example.com 能命中 example.com；星号通配把裸域本身也放行；通配来源后面的 path 限制被丢掉，任意路径都能加载；没写端口被当成任意端口；/js 前缀把 /js-evil/x.js 也放进来；nonce 不匹配时仍回落到主机白名单；hash 用前缀比较，前缀相同即通过；缺少 default-src 时返回星号默认放行；重复指令取最后一条，后注入的宽策略覆盖前一条；token 里的分号等非法字符不校验，注入内容直接混进 source list。csp/policy.py 是核心，tests/test_policy.py 15个红。要修的是：按上面的顺序把 10 个缺陷逐个修掉。
 
 ## 运行方式
 
